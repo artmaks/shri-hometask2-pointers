@@ -8,7 +8,11 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         touchstart: 'start',
         touchmove: 'move',
         touchend: 'end',
-        touchcancel: 'end'
+        touchcancel: 'end',
+        pointerdown: 'start',
+        pointermove: 'move',
+        pointerup: 'end',
+        pointercancel: 'end'
     };
 
     function EventManager(elem, callback) {
@@ -25,14 +29,24 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         _setupListeners: function () {
             this._mouseListener = this._mouseEventHandler.bind(this);
             this._touchListener = this._touchEventHandler.bind(this);
+            this._pointerListener = this._pointerEventHandler.bind(this);
+
             this._addEventListeners('mousedown', this._elem, this._mouseListener);
             this._addEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
+            this._addEventListeners('pointerdown', this._elem, this._pointerListener);
         },
 
         _teardownListeners: function () {
+            // mouse
             this._removeEventListeners('mousedown', this._elem, this._mouseListener);
             this._removeEventListeners('mousemove mouseup', document.documentElement, this._mouseListener);
+
+            // touch
             this._removeEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
+
+            //pointer
+            this._removeEventListeners('pointerdown', this._elem, this._pointerListener);
+            this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
         },
 
         _addEventListeners: function (types, elem, callback) {
@@ -82,6 +96,28 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             var targetPoint = {
                 x: touches[0].pageX - elemOffset.x,
                 y: touches[0].pageY - elemOffset.y
+            };
+
+            this._callback({
+                type: EVENTS[event.type],
+                targetPoint: targetPoint
+            });
+        },
+
+        _pointerEventHandler: function (event) {
+            event.preventDefault();
+
+            if (event.type === 'pointerdown') {
+                this._addEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+            } else if (event.type === 'pointerup') {
+                this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+            }
+
+            var elemOffset = this._calculateElementPreset(this._elem);
+
+            var targetPoint = {
+                x: event.pageX - elemOffset.x,
+                y: event.pageY - elemOffset.y
             };
 
             this._callback({
