@@ -27,7 +27,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
             }
             this._lastEventTypes += ' ' + event.type;
 
-            if (this._lastEventTypes.indexOf('start stop start stop') > -1) {
+            if (this._lastEventTypes.indexOf('start end start end') > -1) {
                 this._lastEventTypes = '';
                 // to do somethin awesome!
                 return;
