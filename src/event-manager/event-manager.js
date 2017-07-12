@@ -15,6 +15,15 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         pointercancel: 'end'
     };
 
+    var SUPPORT = {
+        PointerEvent: false,
+        TouchEvent: false,
+        MouseEvent: false,
+        isChecked: false,
+        primary: undefined,
+        priority: ["TouchEvent", "PointerEvent", "MouseEvent"]
+    };
+
     function EventManager(elem, callback) {
         this._elem = elem;
         this._callback = callback;
@@ -31,23 +40,56 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             this._touchListener = this._touchEventHandler.bind(this);
             this._pointerListener = this._pointerEventHandler.bind(this);
 
+            this._supportChecker = this._supportEventHandler.bind(this);
+            this._addEventListeners('mousedown pointerdown touchstart', this._elem, this._supportChecker);
+
             this._addEventListeners('mousedown', this._elem, this._mouseListener);
             this._addEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
             this._addEventListeners('pointerdown', this._elem, this._pointerListener);
         },
 
         _teardownListeners: function () {
-            // mouse
-            this._removeEventListeners('mousedown', this._elem, this._mouseListener);
-            this._removeEventListeners('mousemove mouseup', document.documentElement, this._mouseListener);
+            this._teardownMouse();
+            this._teardownTouch();
+            this._teardownPointer();
+        },
 
-            // touch
+        // --- Teardown different types of listener ---
+
+        _teardownByType: function (type) {
+            switch(type) {
+                case 'PointerEvent':
+                    this._teardownPointer();
+                    break;
+                case 'MouseEvent':
+                    this._teardownMouse();
+                    break;
+                case 'TouchEvent':
+                    this._teardownTouch();
+                    break;
+                default:
+                    console.log("This type of listener doesn't found: " + type);
+            }
+        },
+
+        _teardownTouch: function () {
+            console.log("Teardown touch");
             this._removeEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
+        },
 
-            //pointer
+        _teardownPointer: function () {
+            console.log("Teardown pointer");
             this._removeEventListeners('pointerdown', this._elem, this._pointerListener);
             this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
         },
+
+        _teardownMouse: function () {
+            console.log("Teardown mouse");
+            this._removeEventListeners('mousedown', this._elem, this._mouseListener);
+            this._removeEventListeners('mousemove mouseup', document.documentElement, this._mouseListener);
+        },
+
+        // --- Event listeners managment ---
 
         _addEventListeners: function (types, elem, callback) {
             types.split(' ').forEach(function (type) {
@@ -60,6 +102,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 elem.removeEventListener(type, callback);
             }, this);
         },
+
+        // --- Handlers for different types ---
 
         _mouseEventHandler: function (event) {
             event.preventDefault();
@@ -125,6 +169,33 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 targetPoint: targetPoint
             });
         },
+
+        // --- Determining supported technologies ---
+
+        _supportEventHandler: function (event) {
+            var eventName = event.constructor.name;
+            if(SUPPORT[eventName] === false) {
+                SUPPORT[eventName] = true;
+
+                if (!SUPPORT.isChecked) {
+                    setTimeout(this._checkSupport.bind(this), 1000);
+                    SUPPORT.isChecked = true;
+                }
+            }
+        },
+
+        _checkSupport: function () {
+            SUPPORT.priority.forEach(function (type) {
+                if(SUPPORT[type] && SUPPORT.primary === undefined) {
+                    SUPPORT.primary = type;
+                    console.log('Setting up "' + type + '" like primary type of input data');
+                } else {
+                    this._teardownByType(type);
+                }
+            }.bind(this));
+        },
+
+        // --- Calculate offset ---
 
         _calculateElementPreset: function (elem) {
             // !
