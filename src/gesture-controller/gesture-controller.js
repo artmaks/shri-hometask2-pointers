@@ -15,6 +15,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         );
         this._lastEventTypes = '';
         this._onTouchZoomEnabled = false;
+        this._lastTargetPoint = undefined;
     };
 
     extend(Controller.prototype, {
@@ -23,6 +24,9 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         },
 
         _eventHandler: function (event) {
+            if (event.type === 'move' && !this._isPointsDifferent(event.targetPoint, this._lastTargetPoint))
+                return;
+
             var state = this._view.getState();
 
             // dblclick
@@ -61,6 +65,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
                     this._onTouchZoomEnabled = false;
                 }
             }
+            this._lastTargetPoint = event.targetPoint;
         },
 
         _processDrag: function (event) {
@@ -98,6 +103,10 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
                 targetPoint.targetPoint,
                 this._initState.scale * (targetPoint.targetPoint.y / secondPoint.targetPoint.y)
             );
+        },
+
+        _isPointsDifferent: function (firtsPoint, secondPoint) {
+            return Math.abs(firtsPoint.x - secondPoint.x) > 1 ||  Math.abs(firtsPoint.y - secondPoint.y) > 1 ? true : false;
         },
 
         _scale: function (targetPoint, newScale) {
