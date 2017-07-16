@@ -141,13 +141,9 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         _wheelEventHandler: function (event) {
             event.preventDefault();
 
-            var elemOffset = this._calculateElementOffset(this._elem);
             this._callback({
                 type: "zoom",
-                targetPoint: {
-                    x: event.clientX - elemOffset.x,
-                    y: event.clientY - elemOffset.y
-                },
+                targetPoint: this._getPointByEvent(event),
                 delta: event.deltaY
             });
         },
@@ -161,14 +157,9 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 this._removeEventListeners('mousemove mouseup', document.documentElement, this._mouseListener);
             }
 
-            var elemOffset = this._calculateElementOffset(this._elem);
-
             this._callback({
                 type: EVENTS[event.type],
-                targetPoint: {
-                    x: event.clientX - elemOffset.x,
-                    y: event.clientY - elemOffset.y
-                },
+                targetPoint: this._getPointByEvent(event),
                 distance: 1
             });
         },
@@ -199,12 +190,9 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 distance = this._calculateDistance(firstTouch, secondTouch);
             }
 
-            targetPoint.x -= elemOffset.x;
-            targetPoint.y -= elemOffset.y;
-
             this._callback({
                 type: EVENTS[event.type],
-                targetPoint: targetPoint,
+                targetPoint: this._calculatePointWithOffset(targetPoint),
                 distance: distance
             });
         },
@@ -227,7 +215,6 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
 
             var targetPoint;
             var distance = 1;
-            var elemOffset = this._calculateElementOffset(this._elem);
 
             //TODO только для эмуляции нажатия
             delete this._pointers[1];
@@ -245,12 +232,9 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 distance = this._calculateDistance(firstTouch, secondTouch);
             }
 
-            targetPoint.x -= elemOffset.x;
-            targetPoint.y -= elemOffset.y;
-
             this._callback({
                 type: EVENTS[event.type],
-                targetPoint: targetPoint,
+                targetPoint: this._calculatePointWithOffset(targetPoint),
                 distance: distance
             });
         },
@@ -277,6 +261,22 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 x: bounds.left,
                 y: bounds.top
             };
+        },
+        
+        _getPointByEvent: function (event) {
+            var elemOffset = this._calculateElementOffset(this._elem);
+            return {
+                x: event.clientX - elemOffset.x,
+                y: event.clientY - elemOffset.y
+            }
+        },
+
+        _calculatePointWithOffset: function (point) {
+            var elemOffset = this._calculateElementOffset(this._elem);
+            return {
+                x: point.x - elemOffset.x,
+                y: point.y - elemOffset.y
+            }
         }
     });
 
