@@ -3,6 +3,8 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
 ], function (provide, EventManager) {
 
     var DBL_TAB_STEP = 0.2;
+    var ZOOM_DELTA_COEF = 0.001;
+    var ONE_TOUCH_ZOOM_DELTA_COEF = 0.01;
 
     var Controller = function (view) {
         this._view = view;
@@ -11,6 +13,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
             this._eventHandler.bind(this)
         );
         this._lastEventTypes = '';
+        this._onTouchZoomEnabled = false;
     };
 
     Object.assign(Controller.prototype, {
@@ -33,10 +36,19 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
                 this._lastEventTypes = '';
                 this._processDbltab(event);
                 return;
+            } else if (this._lastEventTypes.indexOf('start end start move') > -1) {
+                this._onTouchZoomEnabled = true;
+            }
+
+            if (event.type === 'zoom') {
+                this._processZoom(event);
+                return;
             }
 
             if (event.type === 'move') {
-                if (event.distance > 1 && event.distance !== this._initEvent.distance) {
+                if(this._onTouchZoomEnabled) {
+                    this._processOneTouchZoom(this._initEvent, event);
+                } else if (event.distance > 1 && event.distance !== this._initEvent.distance) {
                     this._processMultitouch(event);
                 } else {
                     this._processDrag(event);
@@ -44,6 +56,9 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
             } else {
                 this._initState = this._view.getState();
                 this._initEvent = event;
+                if(this._onTouchZoomEnabled) {
+                    this._onTouchZoomEnabled = false;
+                }
             }
         },
 
@@ -69,7 +84,24 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
             );
         },
 
+        _processZoom: function (event) {
+            var state = this._view.getState();
+            this._scale(
+                event.targetPoint,
+                state.scale + event.delta * ZOOM_DELTA_COEF
+            );
+        },
+
+        _processOneTouchZoom: function (targetPoint, secondPoint) {
+            this._scale(
+                targetPoint.targetPoint,
+                this._initState.scale * (targetPoint.targetPoint.y / secondPoint.targetPoint.y)
+            );
+        },
+
         _scale: function (targetPoint, newScale) {
+            if(newScale < 0.1 || newScale > 6)
+                return;
             var imageSize = this._view.getImageSize();
             var state = this._view.getState();
             // Позиция прикосновения на изображении на текущем уровне масштаба
