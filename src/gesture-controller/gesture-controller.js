@@ -1,6 +1,7 @@
 ym.modules.define('shri2017.imageViewer.GestureController', [
-    'shri2017.imageViewer.EventManager'
-], function (provide, EventManager) {
+    'shri2017.imageViewer.EventManager',
+    'util.extend'
+], function (provide, EventManager, extend) {
 
     var DBL_TAB_STEP = 0.2;
     var ZOOM_DELTA_COEF = 0.001;
@@ -16,7 +17,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         this._onTouchZoomEnabled = false;
     };
 
-    Object.assign(Controller.prototype, {
+    extend(Controller.prototype, {
         destroy: function () {
             this._eventManager.destroy();
         },
