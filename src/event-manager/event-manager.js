@@ -114,7 +114,7 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
 
         _teardownPointer: function () {
             this._removeEventListeners('pointerdown', this._elem, this._pointerListener);
-            this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+            this._removeEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
         },
 
         // --- MOUSE ---
@@ -209,12 +209,12 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             // event.preventDefault();
 
             if (event.type === 'pointerdown') {
-                this._addEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+                this._addEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
                 this._pointers[event.pointerId] = event;
             } else if (event.type === 'pointerup') {
                 delete this._pointers[event.pointerId];
                 if(Object.keys(this._pointers).length === 0)
-                    this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+                    this._removeEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
             }
 
             if(this._pointers[event.pointerId])
