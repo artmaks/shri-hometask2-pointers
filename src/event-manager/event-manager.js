@@ -18,8 +18,11 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
 
     var SUPPORT = {
         PointerEvent: false,
+        PointerEventPrevent: "pointerdown pointerup",
         TouchEvent: false,
+        TouchEventPrevent: "touchstart touchend",
         MouseEvent: false,
+        MouseEventPrevent: "mousedown mouseup",
         primary: undefined,
         priority: ["PointerEvent", "TouchEvent", "MouseEvent"]
     };
@@ -55,6 +58,10 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                         SUPPORT.primary = type;
                         this._setupByType(type);
                         console.log("Setting up " + type + " like primary type")
+                    } else {
+                        this._addEventListeners(SUPPORT[type + "Prevent"], this._elem, function (event) {
+                            event.preventDefault();
+                        });
                     }
                 }
             }.bind(this));
