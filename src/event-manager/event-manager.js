@@ -19,14 +19,14 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         PointerEvent: false,
         TouchEvent: false,
         MouseEvent: false,
-        isChecked: false,
         primary: undefined,
-        priority: ["TouchEvent", "PointerEvent", "MouseEvent"]
+        priority: ["PointerEvent", "TouchEvent", "MouseEvent"]
     };
 
     function EventManager(elem, callback) {
         this._elem = elem;
         this._callback = callback;
+        this._pointers = {};
         this._setupListeners();
     }
 
@@ -36,16 +36,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         },
 
         _setupListeners: function () {
-            this._mouseListener = this._mouseEventHandler.bind(this);
-            this._touchListener = this._touchEventHandler.bind(this);
-            this._pointerListener = this._pointerEventHandler.bind(this);
-
-            this._supportChecker = this._supportEventHandler.bind(this);
-            this._addEventListeners('mousedown pointerdown touchstart', this._elem, this._supportChecker);
-
-            this._addEventListeners('mousedown', this._elem, this._mouseListener);
-            this._addEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
-            this._addEventListeners('pointerdown', this._elem, this._pointerListener);
+            this._checkSupport();
+            this._setupWheel();
         },
 
         _teardownListeners: function () {
@@ -54,37 +46,77 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             this._teardownPointer();
         },
 
-        // --- Teardown different types of listener ---
+        _checkSupport: function () {
+            SUPPORT.priority.forEach(function (type) {
+                if(typeof window[type] === 'function') {
+                    SUPPORT[type] = true;
+                    if(!SUPPORT.primary) {
+                        SUPPORT.primary = type;
+                        this._setupByType(type);
+                        console.log("Setting up " + type + " like primary type")
+                    }
+                }
+            }.bind(this));
+        },
 
-        _teardownByType: function (type) {
+        // --- Setting up different types of listener ---
+
+        _setupByType: function (type) {
             switch(type) {
                 case 'PointerEvent':
-                    this._teardownPointer();
+                    this._setupPointer();
                     break;
                 case 'MouseEvent':
-                    this._teardownMouse();
+                    this._setupMouse();
                     break;
                 case 'TouchEvent':
-                    this._teardownTouch();
+                    this._setupTouch();
                     break;
                 default:
                     console.log("This type of listener doesn't found: " + type);
             }
         },
 
+        // --- WHEEL ---
+
+        _setupWheel: function () {
+            if('onwheel' in document) {
+                this._wheelListener = this._wheelEventHandler.bind(this);
+                this._addEventListeners('wheel', this._elem, this._wheelListener);
+            }
+        },
+
+        // --- TOUCH ---
+
+        _setupTouch: function () {
+            this._touchListener = this._touchEventHandler.bind(this);
+            this._addEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
+        },
+
         _teardownTouch: function () {
-            console.log("Teardown touch");
             this._removeEventListeners('touchstart touchmove touchend touchcancel', this._elem, this._touchListener);
         },
 
+        // --- POINTER ---
+
+        _setupPointer: function () {
+            this._pointerListener = this._pointerEventHandler.bind(this);
+            this._addEventListeners('pointerdown', this._elem, this._pointerListener);
+        },
+
         _teardownPointer: function () {
-            console.log("Teardown pointer");
             this._removeEventListeners('pointerdown', this._elem, this._pointerListener);
             this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
         },
 
+        // --- MOUSE ---
+
+        _setupMouse: function () {
+            this._mouseListener = this._mouseEventHandler.bind(this);
+            this._addEventListeners('mousedown', this._elem, this._mouseListener);
+        },
+
         _teardownMouse: function () {
-            console.log("Teardown mouse");
             this._removeEventListeners('mousedown', this._elem, this._mouseListener);
             this._removeEventListeners('mousemove mouseup', document.documentElement, this._mouseListener);
         },
@@ -103,7 +135,21 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             }, this);
         },
 
-        // --- Handlers for different types ---
+        // --- Handlers for different types of events ---
+
+        _wheelEventHandler: function (event) {
+            event.preventDefault();
+
+            var elemOffset = this._calculateElementOffset(this._elem);
+            this._callback({
+                type: "zoom",
+                targetPoint: {
+                    x: event.clientX - elemOffset.x,
+                    y: event.clientY - elemOffset.y
+                },
+                delta: event.deltaY
+            });
+        },
 
         _mouseEventHandler: function (event) {
             event.preventDefault();
@@ -163,50 +209,49 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         },
 
         _pointerEventHandler: function (event) {
-            event.preventDefault();
+            // Пока закоментить, так как мешает событию mouse down для эмуляции multitouch
+            // event.preventDefault();
 
             if (event.type === 'pointerdown') {
                 this._addEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+                this._pointers[event.pointerId] = event;
             } else if (event.type === 'pointerup') {
-                this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
+                delete this._pointers[event.pointerId];
+                if(Object.keys(this._pointers).length === 0)
+                    this._removeEventListeners('pointermove pointerup', document.documentElement, this._pointerListener);
             }
 
+            if(this._pointers[event.pointerId])
+                this._pointers[event.pointerId] = event;
+
+            var targetPoint;
+            var distance = 1;
             var elemOffset = this._calculateElementOffset(this._elem);
 
-            var targetPoint = {
-                x: event.clientX - elemOffset.x,
-                y: event.clientY - elemOffset.y
-            };
+            //TODO только для эмуляции нажатия
+            delete this._pointers[1];
+
+            if (Object.keys(this._pointers).length <= 1) {
+                targetPoint = {
+                    x: event.clientX,
+                    y: event.clientY
+                };
+            } else {
+                var keys = Object.keys(this._pointers);
+                var firstTouch = this._pointers[keys[0]];
+                var secondTouch = this._pointers[keys[1]];
+                targetPoint = this._calculateTargetPoint(firstTouch, secondTouch);
+                distance = this._calculateDistance(firstTouch, secondTouch);
+            }
+
+            targetPoint.x -= elemOffset.x;
+            targetPoint.y -= elemOffset.y;
 
             this._callback({
                 type: EVENTS[event.type],
-                targetPoint: targetPoint
+                targetPoint: targetPoint,
+                distance: distance
             });
-        },
-
-        // --- Determining supported technologies ---
-
-        _supportEventHandler: function (event) {
-            var eventName = event.constructor.name;
-            if(SUPPORT[eventName] === false) {
-                SUPPORT[eventName] = true;
-
-                if (!SUPPORT.isChecked) {
-                    setTimeout(this._checkSupport.bind(this), 1000);
-                    SUPPORT.isChecked = true;
-                }
-            }
-        },
-
-        _checkSupport: function () {
-            SUPPORT.priority.forEach(function (type) {
-                if(SUPPORT[type] && SUPPORT.primary === undefined) {
-                    SUPPORT.primary = type;
-                    console.log('Setting up "' + type + '" like primary type of input data');
-                } else {
-                    this._teardownByType(type);
-                }
-            }.bind(this));
         },
 
         // --- Calculate offset and other values ---
