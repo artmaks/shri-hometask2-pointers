@@ -106,7 +106,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         },
 
         _isPointsDifferent: function (firtsPoint, secondPoint) {
-            return Math.abs(firtsPoint.x - secondPoint.x) > 1 ||  Math.abs(firtsPoint.y - secondPoint.y) > 1 ? true : false;
+            return Math.abs(firtsPoint.x - secondPoint.x) > 0.00000001 ||  Math.abs(firtsPoint.y - secondPoint.y) > 0.00000001 ? true : false;
         },
 
         _scale: function (targetPoint, newScale) {
