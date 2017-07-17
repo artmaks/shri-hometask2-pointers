@@ -6,6 +6,9 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
     var DBL_TAB_STEP = 0.2;
     var ZOOM_DELTA_COEF = 0.001;
     var ONE_TOUCH_ZOOM_DELTA_COEF = 0.01;
+    var DBL_CLICK = "start end start end";
+    var ONE_TOUCH_ZOOM = "start end start move";
+    var MIN_DELTA = 0.00000001;
 
     var Controller = function (view) {
         this._view = view;
@@ -28,44 +31,37 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
                 return;
 
             var state = this._view.getState();
+            this._lastTargetPoint = event.targetPoint;
+            this._updateLastEvent(event);
 
-            // dblclick
-            if (!this._lastEventTypes) {
-                setTimeout(function () {
-                    this._lastEventTypes = '';
-                }.bind(this), 500);
-            }
-            this._lastEventTypes += ' ' + event.type;
-
-            if (this._lastEventTypes.indexOf('start end start end') > -1) {
-                this._lastEventTypes = '';
+            if (this._lastEvent(DBL_CLICK)) {
+                this._clearLastEvent();
                 this._processDbltab(event);
                 return;
-            } else if (this._lastEventTypes.indexOf('start end start move') > -1 && event.pointerType != "mouse") {
+            } else if (this._lastEvent(ONE_TOUCH_ZOOM) && event.pointerType != "mouse") {
                 this._onTouchZoomEnabled = true;
             }
 
-            if (event.type === 'zoom') {
-                this._processZoom(event);
-                return;
+            switch(event.type) {
+                case 'zoom':
+                    this._processZoom(event);
+                    break;
+                case 'move':
+                    if(this._onTouchZoomEnabled) {
+                        this._processOneTouchZoom(this._initEvent, event);
+                    } else if (this._isDifferenceDistance(this._initEvent, event)) {
+                        this._processMultitouch(event);
+                    } else {
+                        this._processDrag(event);
+                    }
+                    break;
+                default:
+                    this._initState = this._view.getState();
+                    this._initEvent = event;
+                    if(this._onTouchZoomEnabled) {
+                        this._onTouchZoomEnabled = false;
+                    }
             }
-
-            if (event.type === 'move') {
-                if(this._onTouchZoomEnabled) {
-                    this._processOneTouchZoom(this._initEvent, event);
-                } else if (event.distance > 1 && event.distance !== this._initEvent.distance) {
-                    this._processMultitouch(event);
-                } else {
-                    this._processDrag(event);
-                }
-            } else {
-                this._initState = this._view.getState();
-                this._initEvent = event;
-                if(this._onTouchZoomEnabled) {
-                    this._onTouchZoomEnabled = false;
-                }
-            }
-            this._lastTargetPoint = event.targetPoint;
         },
 
         _processDrag: function (event) {
@@ -106,7 +102,28 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         },
 
         _isPointsDifferent: function (firtsPoint, secondPoint) {
-            return Math.abs(firtsPoint.x - secondPoint.x) > 0.00000001 ||  Math.abs(firtsPoint.y - secondPoint.y) > 0.00000001 ? true : false;
+            return Math.abs(firtsPoint.x - secondPoint.x) > MIN_DELTA ||  Math.abs(firtsPoint.y - secondPoint.y) > MIN_DELTA ? true : false;
+        },
+
+        _lastEvent: function (type) {
+            return this._lastEventTypes.indexOf(type) > -1;
+        },
+
+        _updateLastEvent: function(event) {
+            if (!this._lastEventTypes) {
+                setTimeout(function () {
+                    this._lastEventTypes = '';
+                }.bind(this), 500);
+            }
+            this._lastEventTypes += ' ' + event.type;
+        },
+
+        _clearLastEvent: function () {
+            this._lastEvent = '';
+        },
+
+        _isDifferenceDistance:function (initEvent, event) {
+            return event.distance > 1 && event.distance !== initEvent.distance
         },
 
         _scale: function (targetPoint, newScale) {
