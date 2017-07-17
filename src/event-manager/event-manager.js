@@ -52,22 +52,45 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         },
 
         _checkSupport: function () {
-            var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            SUPPORT.priority = isMobile ? SUPPORT.priorityMobile : SUPPORT.priorityDesktop;
-            SUPPORT.priority.forEach(function (type) {
-                if(typeof window[type] === 'function') {
-                    SUPPORT[type] = true;
-                    if(!SUPPORT.primary) {
-                        SUPPORT.primary = type;
+            this._getSupportPriority().forEach(function (type) {
+                if(this._hasConstructor(type)) {
+                    this._enableSupport(type);
+                    if(!this._getPrimary()) {
+                        this._setPrimary(type);
                         this._setupByType(type);
                         console.log("Setting up " + type + " like primary type")
                     } else {
-                        this._addEventListeners(SUPPORT[type + "Prevent"], this._elem, function (event) {
+                        this._addEventListeners(this._getPreventActions(type), this._elem, function (event) {
                             event.preventDefault();
                         });
                     }
                 }
             }.bind(this));
+        },
+
+        _getSupportPriority: function () {
+            var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            return isMobile ? SUPPORT.priorityMobile : SUPPORT.priorityDesktop;
+        },
+
+        _hasConstructor: function (type) {
+            return typeof window[type] === 'function';
+        },
+
+        _setPrimary: function (type) {
+            SUPPORT.primary = type;
+        },
+
+        _getPrimary: function () {
+            return SUPPORT.primary;
+        },
+
+        _enableSupport: function (type) {
+            SUPPORT[type] = true;
+        },
+
+        _getPreventActions: function (type) {
+            return SUPPORT[type + "Prevent"];
         },
 
         // --- Setting up different types of listener ---
