@@ -119,7 +119,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         },
 
         _clearLastEvent: function () {
-            this._lastEvent = '';
+            this._lastEventTypes = '';
         },
 
         _isDifferenceDistance:function (initEvent, event) {
