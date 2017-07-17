@@ -167,7 +167,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             this._callback({
                 type: EVENTS[event.type],
                 targetPoint: this._getPointByEvent(event),
-                distance: 1
+                distance: 1,
+                pointerType: "mouse"
             });
         },
 
@@ -200,7 +201,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             this._callback({
                 type: EVENTS[event.type],
                 targetPoint: this._calculatePointWithOffset(targetPoint),
-                distance: distance
+                distance: distance,
+                pointerType: "touch"
             });
         },
 
@@ -242,7 +244,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             this._callback({
                 type: EVENTS[event.type],
                 targetPoint: this._calculatePointWithOffset(targetPoint),
-                distance: distance
+                distance: distance,
+                pointerType: event.pointerType
             });
         },
 

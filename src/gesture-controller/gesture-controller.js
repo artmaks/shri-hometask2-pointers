@@ -41,7 +41,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
                 this._lastEventTypes = '';
                 this._processDbltab(event);
                 return;
-            } else if (this._lastEventTypes.indexOf('start end start move') > -1) {
+            } else if (this._lastEventTypes.indexOf('start end start move') > -1 && event.pointerType != "mouse") {
                 this._onTouchZoomEnabled = true;
             }
 
