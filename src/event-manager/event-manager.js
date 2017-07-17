@@ -179,15 +179,9 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             // Отменяем стандартное поведение (последующие события мышки)
             event.preventDefault();
 
-            var touches = event.touches;
-            // touchend/touchcancel
-            if (touches.length === 0) {
-                touches = event.changedTouches;
-            }
-
             var targetPoint;
             var distance = 1;
-            var elemOffset = this._calculateElementOffset(this._elem);
+            var touches = this._getActualTouches(event);
 
             if (touches.length === 1) {
                 targetPoint = {
@@ -209,37 +203,37 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             });
         },
 
+        _getActualTouches: function (event) {
+            return event.touches.length === 0 ? event.changedTouches : event.touches;
+        },
+
         _pointerEventHandler: function (event) {
             // Пока закоментить, так как мешает событию mouse down для эмуляции multitouch
             // event.preventDefault();
 
-            if (event.type === 'pointerdown') {
-                this._addEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
-                this._pointers[event.pointerId] = event;
-            } else if (event.type === 'pointerup') {
-                delete this._pointers[event.pointerId];
-                if(Object.keys(this._pointers).length === 0)
-                    this._removeEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
-            }
-
-            if(this._pointers[event.pointerId])
-                this._pointers[event.pointerId] = event;
-
             var targetPoint;
             var distance = 1;
+
+            if (event.type === 'pointerdown') {
+                this._addPointer(event);
+            } else if (event.type === 'pointerup') {
+                this._removePointer(event);
+            }
+
+            this._updatePointer(event);
 
             //TODO только для эмуляции нажатия
             delete this._pointers[1];
 
-            if (Object.keys(this._pointers).length <= 1) {
+            if (this._pointersCount() <= 1) {
                 targetPoint = {
                     x: event.clientX,
                     y: event.clientY
                 };
             } else {
-                var keys = Object.keys(this._pointers);
-                var firstTouch = this._pointers[keys[0]];
-                var secondTouch = this._pointers[keys[1]];
+                var firstPointers = this._getFirstPointers(2);
+                var firstTouch = firstPointers[0];
+                var secondTouch = firstPointers[1];
                 targetPoint = this._calculateTargetPoint(firstTouch, secondTouch);
                 distance = this._calculateDistance(firstTouch, secondTouch);
             }
@@ -250,6 +244,39 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
                 distance: distance,
                 pointerType: event.pointerType
             });
+        },
+
+        _addPointer: function () {
+            this._addEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
+            this._pointers[event.pointerId] = event;
+        },
+
+        _removePointer: function (event) {
+            delete this._pointers[event.pointerId];
+            if(this._pointersCount() === 0)
+                this._removeEventListeners('pointermove pointerup pointercancel', document.documentElement, this._pointerListener);
+        },
+
+        _getPointer: function(pointerId) {
+            return this._pointers[pointerId];
+        },
+
+        _updatePointer: function (event) {
+            if(this._getPointer(event.pointerId))
+                this._pointers[event.pointerId] = event;
+        },
+
+        _pointersCount: function () {
+            return Object.keys(this._pointers).length;
+        },
+
+        _getFirstPointers: function (count) {
+            var keys = Object.keys(this._pointers);
+            var pointers = [];
+            for(var i = 0; i < count; i++) {
+                pointers.push(this._pointers[keys[i]])
+            }
+            return pointers;
         },
 
         // --- Calculate offset and other values ---
