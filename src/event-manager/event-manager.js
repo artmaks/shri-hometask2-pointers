@@ -24,7 +24,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         MouseEvent: false,
         MouseEventPrevent: "mousedown mouseup",
         primary: undefined,
-        priority: ["PointerEvent", "TouchEvent", "MouseEvent"]
+        priorityDesktop: ["PointerEvent", "TouchEvent", "MouseEvent"],
+        priorityMobile: ["TouchEvent", "PointerEvent", "MouseEvent"]
     };
 
     function EventManager(elem, callback) {
@@ -51,6 +52,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         },
 
         _checkSupport: function () {
+            var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            SUPPORT.priority = isMobile ? SUPPORT.priorityMobile : SUPPORT.priorityDesktop;
             SUPPORT.priority.forEach(function (type) {
                 if(typeof window[type] === 'function') {
                     SUPPORT[type] = true;
