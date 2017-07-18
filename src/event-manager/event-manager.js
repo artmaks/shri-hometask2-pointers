@@ -249,9 +249,10 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
             delete this._pointers[1];
 
             if (this._pointersCount() <= 1) {
+                var lastPointer = this._getLastPointer();
                 targetPoint = {
-                    x: event.clientX,
-                    y: event.clientY
+                    x: lastPointer.clientX,
+                    y: lastPointer.clientY
                 };
             } else {
                 var firstPointers = this._getFirstPointers(2);
@@ -282,6 +283,10 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
 
         _getPointer: function(pointerId) {
             return this._pointers[pointerId];
+        },
+
+        _getLastPointer: function(pointerId) {
+            return this._pointers[Object.keys(this._pointers)[0]];
         },
 
         _updatePointer: function (event) {
