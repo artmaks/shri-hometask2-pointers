@@ -245,11 +245,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
 
             this._updatePointer(event);
 
-            //TODO только для эмуляции нажатия
-            delete this._pointers[1];
-
             if (this._pointersCount() <= 1) {
-                var lastPointer = this._getLastPointer();
+                var lastPointer = this._getLastPointer() || event;
                 targetPoint = {
                     x: lastPointer.clientX,
                     y: lastPointer.clientY
