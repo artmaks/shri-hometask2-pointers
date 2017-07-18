@@ -5,7 +5,6 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
 
     var DBL_TAB_STEP = 0.2;
     var ZOOM_DELTA_COEF = 0.001;
-    var ONE_TOUCH_ZOOM_DELTA_COEF = 0.01;
     var DBL_CLICK = "start end start end";
     var ONE_TOUCH_ZOOM = "start end start move";
     var MIN_DELTA = 0.00000001;
@@ -102,7 +101,7 @@ ym.modules.define('shri2017.imageViewer.GestureController', [
         },
 
         _isPointsDifferent: function (firtsPoint, secondPoint) {
-            return Math.abs(firtsPoint.x - secondPoint.x) > MIN_DELTA ||  Math.abs(firtsPoint.y - secondPoint.y) > MIN_DELTA ? true : false;
+            return Math.abs(firtsPoint.x - secondPoint.x) > MIN_DELTA ||  Math.abs(firtsPoint.y - secondPoint.y) > MIN_DELTA;
         },
 
         _lastEvent: function (type) {
