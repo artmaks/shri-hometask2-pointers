@@ -74,7 +74,7 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         },
 
         _hasConstructor: function (type) {
-            return typeof window[type] === 'function';
+            return Boolean(window[type]);
         },
 
         _setPrimary: function (type) {
@@ -114,10 +114,8 @@ ym.modules.define('shri2017.imageViewer.EventManager', [
         // --- WHEEL ---
 
         _setupWheel: function () {
-            if('onwheel' in document) {
-                this._wheelListener = this._wheelEventHandler.bind(this);
-                this._addEventListeners('wheel', this._elem, this._wheelListener);
-            }
+            this._wheelListener = this._wheelEventHandler.bind(this);
+            this._addEventListeners('wheel', this._elem, this._wheelListener);
         },
 
         // --- TOUCH ---
