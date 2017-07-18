@@ -1,14 +1,15 @@
 ym.modules.define('shri2017.imageViewer.View', [
     'shri2017.imageViewer.util.imageLoader',
+    'util.extend',
     'view.css'
-], function (provide, imageLoader) {
+], function (provide, imageLoader, extend) {
     var View = function (params) {
         this._resetData();
         this._setupDOM(params);
         this.setURL(params.url);
     };
 
-    Object.assign(View.prototype, {
+    extend(View.prototype, {
         setURL: function (url) {
             this._curURL = url;
             if (this._holderElem) {
@@ -29,12 +30,12 @@ ym.modules.define('shri2017.imageViewer.View', [
 
         getState: function () {
             // !
-            return Object.assign({}, this._state);
+            return extend({}, this._state);
         },
 
         setState: function (state) {
             // !
-            this._state = Object.assign({}, this._state, state);
+            this._state = extend({}, this._state, state);
             this._setTransform(this._state);
         },
 
@@ -69,7 +70,6 @@ ym.modules.define('shri2017.imageViewer.View', [
             // Устаналиваем новую
             ctx.translate(state.pivotPointX, state.pivotPointY);
             ctx.scale(state.scale, state.scale);
-            ctx.rotate(state.angle);
             // Отрисовываем изображение с учетом текущей "стержневой" точки
             ctx.drawImage(
                 this._properties.image,
@@ -118,7 +118,6 @@ ym.modules.define('shri2017.imageViewer.View', [
                 positionX: 0,
                 positionY: 0,
                 scale: 1,
-                angle: 0,
                 pivotPointX: 0,
                 pivotPointY: 0
             };
